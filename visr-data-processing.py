@@ -8,14 +8,24 @@ from numpy.typing import NDArray
 
 def main():
     with h5py.File("spectroscopy_detector.h5") as file:
-        raw_values = load_raw_photo_sensor_grayscale_values(file)
-    grayscale_values = normalize_values(raw_values)
-    figure = plot_grayscale(grayscale_values)
+        raw_values = load_raw_photo_sensor_rgb_values(file)
+    rgb_values = normalize_values(raw_values)
+    figure = plot_color(rgb_values)
     figure.savefig("sample_image.png")
 
 
 def normalize_values(raw_rgb_values: NDArray[np.int32]) -> NDArray[np.float64]:
-    return raw_rgb_values / float(np.max(raw_rgb_values))
+    max_value = float(np.max(raw_rgb_values))
+    if max_value != 0:
+        return raw_rgb_values / max_value
+
+
+def load_raw_photo_sensor_rgb_values(file) -> NDArray[np.int32]:
+    red = np.array(file["entry/instrument/NDAttributes/RedTotal"])
+    green = np.array(file["entry/instrument/NDAttributes/GreenTotal"])
+    blue = np.array(file["entry/instrument/NDAttributes/BlueTotal"])
+    rgb = np.vstack((red, green, blue))
+    return rgb
 
 
 def load_raw_photo_sensor_grayscale_values(file) -> NDArray[np.int32]:
@@ -30,6 +40,13 @@ def load_raw_photo_sensor_grayscale_values(file) -> NDArray[np.int32]:
     rgb = np.vstack((red, green, blue))
     assert rgb.shape == (3, red.shape[0])
     return rgb
+
+
+def plot_color(rgb_values: NDArray[np.float64]) -> plt.Figure:
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.imshow(grayscale)
+    return fig
 
 
 def plot_grayscale(rgb_values: NDArray[np.float64]) -> plt.Figure:
